@@ -1,0 +1,6 @@
+[submodule "aqua"]
+	path = aqua
+	url = https://github.com/semyon422/aqua
+[submodule "3rd-deps"]
+	path = 3rd-deps
+	url = https://github.com/semyon422/soundsphere-3rd-party-deps
