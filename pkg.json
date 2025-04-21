@@ -1,0 +1,10 @@
+{
+    "name": "svnplug",
+    "display_name": "Savolina",
+    "desc": "RPG System",
+    "creator": "Thetan & Tatted",
+    "version": 1,
+    "types": {
+        "require": "svnplug_init",
+    },
+}

@@ -1,6 +1,6 @@
 ---@class web.NginxConfig
 local config = {
-	listen = 8080,
+	listen = 8081,
 	lua_code_cache = "off",
 	client_max_body_size = "10M",
 	handler = "svn.app.handler",
