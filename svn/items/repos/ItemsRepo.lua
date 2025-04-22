@@ -8,13 +8,20 @@ local ItemsRepo = class()
 ---@param template_registry svn.TemplateRegistry
 function ItemsRepo:new(models, template_registry)
 	self.models = models
-	self.templateRegistry = template_registry
+	self.template_registry = template_registry
 end
 
 ---@param id integer
 ---@return svn.Item?
 function ItemsRepo:getItem(id)
 	return self.models.inventory_entries:find({ id = assert(id) })
+end
+
+---@param owner_id integer
+---@param template_id integer
+---@return svn.Item?
+function ItemsRepo:getOwnerItemByTemplateId(owner_id, template_id)
+	return self.models.inventory_entries:find({ template_id = assert(template_id), owner_id = assert(owner_id) })
 end
 
 ---@param owner_id integer

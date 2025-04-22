@@ -23,7 +23,7 @@ function App:new()
 
 	self.sessions = Sessions("savolina", "security...? what is this?")
 	self.repos = Repos(self.db.models, template_registry)
-	self.domain = Domain(self.repos)
+	self.domain = Domain(self.repos, template_registry)
 	self.resources = Resources(self.domain, self.sessions)
 	self.router = Router()
 	self.router:route(self.resources:getList())

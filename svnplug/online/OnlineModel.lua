@@ -114,4 +114,17 @@ function OnlineModel:register(name, email, password)
 	end)()
 end
 
+---@param score svn.Score
+function OnlineModel:submitScore(score)
+	coroutine.wrap(function()
+		local reward = self.svn_client.remote.submission:submitScore(score)
+
+		if reward then
+			print(require("inspect")(reward))
+		else
+			print("noob")
+		end
+	end)()
+end
+
 return OnlineModel

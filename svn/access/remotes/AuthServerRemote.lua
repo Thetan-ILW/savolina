@@ -37,6 +37,7 @@ function AuthServerRemote:login(email, password)
 		return nil, err
 	end
 
+	self.ctx.user = su.user
 	return su.user
 end
 
@@ -62,13 +63,14 @@ function AuthServerRemote:register(name, email, password)
 		return nil, table.concat(errs, ", ")
 	end
 
-	local su, err = self.users:register(user, self.ctx.ip, self.ctx.time)
+	local su, err = self.users:register(user, self.ctx.ip, os.time())
 
 	if not su then
 		---@cast err string
 		return nil, err
 	end
 
+	self.ctx.user = su.user
 	return su.user
 end
 

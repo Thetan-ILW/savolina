@@ -72,26 +72,14 @@ function View:onlineStateUpdated(state)
 	self:transitOutPages()
 
 	if state == "connecting" then
-		self:pushConnectingPage()
+		self:pushLoadingPage("Connecting")
 	elseif state == "reconnecting" then
-		self:pushReconnectingPage()
+		self:pushLoadingPage("Failed to connect. Reconnecting...")
 	elseif state == "auth_required" then
 		self:pushLoginPage()
 	elseif state == "ready" then
 		self:pushLoadoutPage()
 	end
-end
-
-function View:pushReconnectingPage()
-	local page = self.pages:addChild(self:getPageName(), Page())
-	page:addChild("text", Label({
-		boxWidth = self.width,
-		boxHeight = self.height,
-		alignX = "center",
-		alignY = "center",
-		font = self.fonts:loadFont("Bold", 52),
-		text = "Failed to connect. Reconnecting..."
-	}))
 end
 
 function View:pushLoginPage()
@@ -370,6 +358,27 @@ function View:pushLoadoutPage()
 		alignY = "center",
 		font = self.fonts:loadFont("Regular", 34),
 		text = require("inspect")(self.svn_online_model.session_user)
+	}))
+
+	local Score = require("svn.scores.Score")
+
+	page:addChild("moneyPrinter", Button({
+		label = "Get more money",
+		font = self.fonts:loadFont("Regular", 20),
+		width = 100,
+		height = 30,
+		color = { 0.05, 0.52, 0.65, 1 },
+		onClick = function()
+			local score = Score()
+			score.score = 5000000
+			score.chart_duration = 120
+			score.ln_percent = 0.01
+			score.enps_diff = 20.00
+			score.msd_diff = 26.00
+			score.note_count = 2000
+			score.input_mode = "4key"
+			self.svn_online_model:submitScore(score)
+		end
 	}))
 end
 

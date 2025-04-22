@@ -1,6 +1,5 @@
 local class = require("class")
 
-local AuthResource = require("svn.access.http.AuthResource")
 local ItemResource = require("svn.items.http.ItemResource")
 
 local ServerRemote = require("svn.app.remotes.ServerRemote")
@@ -14,7 +13,6 @@ local Resources = class()
 ---@param sessions web.Sessions
 function Resources:new(domain, sessions)
 
-	self.auth = AuthResource(domain.users, sessions)
 	self.items = ItemResource(domain.items)
 
 	local server_remote_handler = ServerRemote(domain, sessions)
@@ -23,7 +21,6 @@ end
 
 function Resources:getList()
 	return {
-		self.auth,
 		self.items,
 		self.websocket
 	}
