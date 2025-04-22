@@ -40,6 +40,7 @@ function Scores:rewardUser(user, score)
 	self.users_repo:updateUser(user)
 
 	local template = self.template_registry:createByName("shit_item_gacha")
+	template.owner_id = user.id
 
 	if template then
 		local item = self.items_repo:getOwnerItemByTemplateId(user.id, template.template_id)
