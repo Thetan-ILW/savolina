@@ -17,9 +17,9 @@ WebsocketResource.routes = {
 
 local function remote_handler_transform(_, th, peer, obj, ...)
 	local _obj = setmetatable({}, {__index = obj})
-	_obj.remote = Remote(th, peer) --[[@as sea.ClientRemote]]
-	_obj.user = (...) --[[@as sea.User]]
-	---@cast _obj +sea.IServerRemote
+	_obj.remote = Remote(th, peer) --[[@as svn.ClientRemote]]
+	_obj.ctx = (...) --[[@as svn.WebsocketContext ]]
+	---@cast _obj +svn.IServerRemote
 	return _obj, select(2, ...)
 end
 
@@ -37,12 +37,19 @@ function WebsocketResource:server(req, res, ctx)
 	local peer = WebsocketPeer(ws)
 	local task_handler = TaskHandler(self.remote_handler)
 
+	---@type svn.WebsocketContext
+	--- Not really the best thing... Only used for login
+	local ws_ctx = {
+		user = ctx.session_user,
+		ip = ctx.ip
+	}
+
 	---@param msg icc.Message
 	local function handle_msg(msg)
 		if msg.ret then
 			task_handler:handleReturn(msg)
 		else
-			msg:insert(ctx.session_user, 3)
+			msg:insert(ws_ctx, 3)
 			task_handler:handleCall(peer, msg)
 		end
 	end

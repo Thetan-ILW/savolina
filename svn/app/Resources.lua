@@ -17,7 +17,7 @@ function Resources:new(domain, sessions)
 	self.auth = AuthResource(domain.users, sessions)
 	self.items = ItemResource(domain.items)
 
-	local server_remote_handler = ServerRemote(domain)
+	local server_remote_handler = ServerRemote(domain, sessions)
 	self.websocket = WebsocketResource(server_remote_handler)
 end
 

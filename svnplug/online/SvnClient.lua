@@ -41,7 +41,7 @@ function SvnClient:new(game)
 	self.task_handler = task_handler
 
 	local remote = Remote(self.task_handler, self.server_peer)
-	---@cast remote -icc.Remote, +sea.ServerRemote
+	---@cast remote -icc.Remote, +svn.ServerRemote
 	self.remote = remote
 
 	function self.protocol:text(payload, fin)
@@ -57,6 +57,7 @@ function SvnClient:new(game)
 		end
 	end
 
+	self.reconnecting = false
 	self.connected = false
 end
 
@@ -88,16 +89,14 @@ function SvnClient:load(url)
 		while true do
 			local state = self.sphws_ret:getState()
 			if state ~= "open" then
-				print("SVN: connecting to websocket")
 				local ok, err = self.sphws_ret:connect(url)
 				if not ok then
+					self.reconnecting = true
 					self.connected = false
-					print("SVN: connection failed")
 					delay.sleep(self.reconnect_interval)
 				else
 					self.connected = true
 					self.server_peer.ws = self.sphws.ws
-					print("SVN: connected")
 				end
 			end
 			delay.sleep(1)

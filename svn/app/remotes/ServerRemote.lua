@@ -2,8 +2,12 @@ local class = require("class")
 
 local AuthServerRemote = require("svn.access.remotes.AuthServerRemote")
 
----@class svn.IServerRemote
+---@class svn.WebsocketContext
 ---@field user svn.User
+---@field ip string
+
+---@class svn.IServerRemote
+---@field ctx svn.WebsocketContext
 ---@field remote svn.ClientRemote
 
 ---@class svn.ServerRemote

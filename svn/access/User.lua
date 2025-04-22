@@ -64,4 +64,18 @@ function User:validateRegister()
 	return true
 end
 
+---@param target_user_id integer?
+---@return boolean
+function User:isOwner(target_user_id)
+	if not target_user_id then
+		return false
+	end
+
+	if target_user_id ~= self.id then
+		return false
+	end
+
+	return true
+end
+
 return User
