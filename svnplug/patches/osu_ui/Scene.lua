@@ -2,6 +2,7 @@ local Scene = require("osu_ui.Scene")
 local SavolinaLoadout = require("svnplug.views.osu.SavolinaLoadout")
 
 local MessageEvent = require("svnplug.online.Event.Message")
+local InventoryUpdateEvent = require("svnplug.online.Event.InventoryUpdateEvent")
 
 local base_load = Scene.load
 function Scene:load()
@@ -21,5 +22,8 @@ function Scene:handleSvnEvent(event) ---@diagnostic disable-line
 		end
 
 		self.popupContainer:add(event.message, color)
+	elseif InventoryUpdateEvent * event then
+		---@cast event svnplug.online.InventoryUpdateEvent
+		self.popupContainer:add("Score submitted", "green")
 	end
 end

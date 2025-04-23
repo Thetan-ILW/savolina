@@ -88,6 +88,8 @@ function View:handleState(state)
 		self:pushLoadingPage("Connecting")
 	elseif state == "reconnecting" then
 		self:pushLoadingPage("Failed to connect. Reconnecting...")
+	elseif state == "authentication" then
+		self:pushLoadingPage("Authentication")
 	elseif state == "auth_required" then
 		self:pushLoginPage()
 	elseif state == "ready" then
@@ -156,7 +158,7 @@ function View:pushLoginPage()
 		color = { 0.05, 0.52, 0.65, 1 },
 		onClick = function()
 			self:transitOutPages()
-			self:pushLoadingPage("Please wait...")
+			self:pushLoadingPage("Authentication")
 			coroutine.wrap(function ()
 				self.svn_online_model:login(email_textbox.input, password_textbox.input)
 			end)()
@@ -300,6 +302,7 @@ function View:pushRegisterPage()
 			end
 
 			self:transitOutPages()
+			self:pushLoadingPage("Authentication")
 
 			coroutine.wrap(function ()
 				self.svn_online_model:register(name_textbox.input, email_textbox.input, password_textbox.input)

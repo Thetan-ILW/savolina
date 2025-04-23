@@ -9,6 +9,7 @@ function UserInterfaceModel:load(...)
 
 	local game = self.game ---@diagnostic disable-line
 	game.svn_client = SvnClient(game) ---@diagnostic disable-line
+	game.svn_client.session_cookie = love.filesystem.read("userdata/savolina")
 	game.svn_client:load("http://127.0.0.1:8081/ws")
 	game.svn_online_model = OnlineModel(game.svn_client) ---@diagnostic disable-line
 	game.gameplayController.svn_online_model = game.svn_online_model ---@diagnostic disable-line

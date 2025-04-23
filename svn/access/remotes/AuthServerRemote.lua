@@ -1,19 +1,22 @@
 local class = require("class")
 
 local User = require("svn.access.User")
+local Headers = require("web.http.Headers")
 
 ---@class svn.AuthServerRemote : svn.IServerRemote
 ---@operator call: svn.AuthServerRemote
 local AuthServerRemote = class()
 
 ---@param users svn.Users
-function AuthServerRemote:new(users)
+---@param sessions web.Sessions
+function AuthServerRemote:new(users, sessions)
 	self.users = users
+	self.sessions = sessions
 end
 
 ---@param email string
 ---@param password string
----@return svn.User?
+---@return string? cookie
 ---@return string? error
 function AuthServerRemote:login(email, password)
 	if self.ctx.user then
@@ -37,14 +40,17 @@ function AuthServerRemote:login(email, password)
 		return nil, err
 	end
 
+	local h = Headers()
+	self.sessions:set(h, { id = su.session.id })
+
 	self.ctx.user = su.user
-	return su.user
+	return h:get("Set-Cookie")
 end
 
 ---@param name string
 ---@param email string
 ---@param password string
----@return svn.User?
+---@return string? cookie
 ---@return string? error
 function AuthServerRemote:register(name, email, password)
 	if self.ctx.user then
@@ -70,14 +76,16 @@ function AuthServerRemote:register(name, email, password)
 		return nil, err
 	end
 
+	local h = Headers()
+	self.sessions:set(h, { id = su.session.id })
+
 	self.ctx.user = su.user
-	return su.user
+	return h:get("Set-Cookie")
 end
 
----@param cookie string
----@return svn.User?
-function AuthServerRemote:getSession(cookie)
-	return nil
+---@return boolean
+function AuthServerRemote:isSessionActive()
+	return self.ctx.user ~= nil
 end
 
 return AuthServerRemote

@@ -2,7 +2,7 @@ local class = require("class")
 local delay = require("delay")
 local ThreadRemote = require("threadremote.ThreadRemote")
 
-local SphereWebsocket = require("sphere.online.SphereWebsocket")
+local SvnWebsocket = require("svnplug.online.SvnWebsocket")
 
 local Subprotocol = require("web.ws.Subprotocol")
 
@@ -15,6 +15,7 @@ local ClientRemote = require("svn.app.remotes.ClientRemote")
 
 ---@class svnplug.SvnClient
 ---@operator call: svnplug.SvnClient
+---@field session_cookie string?
 local SvnClient = class()
 
 SvnClient.threaded = true
@@ -65,22 +66,22 @@ function SvnClient:load(url)
 	self.url = url
 
 	if not self.threaded then
-		self.sphws = SphereWebsocket()
+		self.sphws = SvnWebsocket()
 		self.sphws.protocol = self.protocol
 		self.sphws_ret = self.sphws
 	else
 		local thread_remote = ThreadRemote("svnwebsocket", self.protocol)
 		self.thread_remote = thread_remote
 		thread_remote:start(function(protocol)
-			local SphereWebsocket = require("sphere.online.SphereWebsocket")
-			local sphws = SphereWebsocket(url)
+			local SvnWebsocket = require("svnplug.online.SvnWebsocket")
+			local sphws = SvnWebsocket()
 			sphws.protocol = -protocol --[[@as web.Subprotocol]]
 			return sphws
 		end)
 		local sphws = -thread_remote.remote
 		local sphws_ret = thread_remote.remote
-		---@cast sphws -icc.Remote, +sphere.SphereWebsocket
-		---@cast sphws_ret -icc.Remote, +sphere.SphereWebsocket
+		---@cast sphws -icc.Remote, +svnplug.SvnWebsocket
+		---@cast sphws_ret -icc.Remote, +svnplug.SvnWebsocket
 		self.sphws = sphws
 		self.sphws_ret = sphws_ret
 	end
@@ -89,7 +90,9 @@ function SvnClient:load(url)
 		while true do
 			local state = self.sphws_ret:getState()
 			if state ~= "open" then
-				local ok, err = self.sphws_ret:connect(url)
+				local ok, err = self.sphws_ret:connect(url, {
+					cookie = self.session_cookie
+				})
 				if not ok then
 					self.reconnecting = true
 					self.connected = false

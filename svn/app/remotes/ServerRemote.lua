@@ -16,8 +16,9 @@ local SubmissionServerRemote = require("svn.scores.remotes.SubmissionServerRemot
 local ServerRemote = class()
 
 ---@param domain svn.Domain
-function ServerRemote:new(domain)
-	self.auth = AuthServerRemote(domain.users)
+---@param sessions web.Sessions
+function ServerRemote:new(domain, sessions)
+	self.auth = AuthServerRemote(domain.users, sessions)
 	self.submission = SubmissionServerRemote(domain.scores)
 end
 

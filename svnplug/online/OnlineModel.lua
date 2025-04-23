@@ -9,32 +9,31 @@ local InventoryUpdateEvent = require("svnplug.online.Event.InventoryUpdateEvent"
 ---@class svnplug.OnlineModel
 ---@operator call: svnplug.OnlineModel
 ---@field state svnplug.online.State
----@field session_user svn.User?
 local OnlineModel = class()
 
 ---@param svn_client svnplug.SvnClient
 function OnlineModel:new(svn_client)
 	self.svn_client = svn_client
 	self.connected = false
-	self.session_cookie = ""
+	self.session_active = false
 	self.state = "connecting"
-	self.eventListeners = {} ---@type {[table]: fun(self: table, event: svnplug.online.Event)}
+	self.event_listeners = {} ---@type {[table]: fun(self: table, event: svnplug.online.Event)}
 end
 
 ---@param instance table
 ---@param f fun(self: table, event: svnplug.online.Event)
 function OnlineModel:listenForEvents(instance, f)
-	self.eventListeners[instance] = f
+	self.event_listeners[instance] = f
 end
 
 ---@param instance table
 function OnlineModel:stopListeningForEvents(instance)
-	self.eventListeners[instance] = nil
+	self.event_listeners[instance] = nil
 end
 
 ---@param event svnplug.online.Event
 function OnlineModel:sendEvent(event)
-	for instance, f in pairs(self.eventListeners) do
+	for instance, f in pairs(self.event_listeners) do
 		f(instance, event)
 	end
 end
@@ -42,18 +41,23 @@ end
 function OnlineModel:onlineStateUpdated()
 	self.connected = self.svn_client.connected
 
+	local prev_state = self.state
+
 	if not self.svn_client.connected and not self.svn_client.reconnecting then
 		self.state = "connecting"
 	elseif not self.svn_client.connected then
+		self.session_active = false
 		self.state = "reconnecting"
-	elseif self.svn_client.connected and not self.session_user then
-		if not self.session_cookie or self.session_cookie == "" then
-			self.state = "auth_required"
+	elseif self.svn_client.connected and not self.session_active then
+		self.state = "authentication"
+		if prev_state == "connecting" or prev_state == "reconnecting" then
+			coroutine.wrap(function()
+				self:checkSession()
+			end)()
 		else
-			self.state = "authentication"
-			self:getSession()
+			self.state = "auth_required"
 		end
-	elseif self.svn_client.connected and self.session_user then
+	elseif self.svn_client.connected and self.session_active then
 		self.state = "ready"
 	end
 
@@ -68,20 +72,28 @@ function OnlineModel:update()
 	end
 end
 
-function OnlineModel:getSession()
-	local ok, err = self.svn_client.remote.auth:getSession(self.session_cookie)
+function OnlineModel:checkSession()
+	self.session_active = self.svn_client.remote.auth:isSessionActive()
+	self:onlineStateUpdated()
+end
+
+---@param cookie string
+function OnlineModel:saveCookie(cookie)
+	love.filesystem.write("userdata/savolina", cookie)
 end
 
 ---@param email string
 ---@param password string
 function OnlineModel:login(email, password)
-	local user = self.svn_client.remote.auth:login(email, password)
+	local cookie, err = self.svn_client.remote.auth:login(email, password)
 
-	if user then
-		self.session_user = user
+	if cookie then
+		self:saveCookie(cookie)
+		self.session_active = true
 	else
+		---@cast err string
 		local msg = MessageEvent()
-		msg.message = "Could not log in. Make sure you entered the correct email/password"
+		msg.message = err
 		msg.type = "error"
 		self:sendEvent(msg)
 	end
@@ -92,10 +104,11 @@ end
 ---@param email string
 ---@param password string
 function OnlineModel:register(name, email, password)
-	local user, err = self.svn_client.remote.auth:register(name, email, password)
+	local cookie, err = self.svn_client.remote.auth:register(name, email, password)
 
-	if user then
-		self.session_user = user
+	if cookie then
+		self:saveCookie(cookie)
+		self.session_active = true
 	else
 		---@cast err string
 		local msg = MessageEvent()
