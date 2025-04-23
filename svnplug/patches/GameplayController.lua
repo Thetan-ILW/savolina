@@ -20,5 +20,8 @@ function GameplayController:saveScore()
 	score.input_mode = chartdiff.inputmode
 
 	local svn_online_model = self.svn_online_model ---@type svnplug.OnlineModel
-	svn_online_model:submitScore(score)
+
+	coroutine.wrap(function ()
+		svn_online_model:submitScore(score)
+	end)()
 end

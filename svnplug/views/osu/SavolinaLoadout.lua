@@ -8,6 +8,8 @@ local Component = require("ui.Component")
 local BackButton = require("osu_ui.ui.BackButton")
 local Image = require("ui.Image")
 
+local StateChangedEvent = require("svnplug.online.Event.StateChangedEvent")
+
 ---@class svnplug.osu.SavolinaLoadout : osu.ui.Screen
 ---@operator call: svnplug.osu.SavolinaLoadout
 local View = Screen + {}
@@ -43,7 +45,7 @@ function View:load()
 	self.page_count = 0
 
 	self.svn_online_model = self.scene.game.svn_online_model ---@type svnplug.OnlineModel
-	self.svn_online_model:listenForStateChanges(self, self.onlineStateUpdated)
+	self.svn_online_model:listenForEvents(self, self.handleSvnEvent)
 
 	self:addChild("backButton", BackButton({
 		y = self.height - 58,
@@ -56,6 +58,8 @@ function View:load()
 			self:quit()
 		end,
 	}))
+
+	self:handleState(self.svn_online_model.state)
 end
 
 function View:getPageName()
@@ -64,11 +68,20 @@ function View:getPageName()
 end
 
 function View:kill()
-	self.svn_online_model:stopListeningForStateChanges(self)
+	self.svn_online_model:stopListeningForEvents(self)
 end
 
----@param state svnplug.OnlineState
-function View:onlineStateUpdated(state)
+---@param event svnplug.online.Event
+function View:handleSvnEvent(event)
+	if not (StateChangedEvent * event) then
+		return
+	end
+
+	self:handleState(event.state)
+end
+
+---@param state svnplug.online.State
+function View:handleState(state)
 	self:transitOutPages()
 
 	if state == "connecting" then
@@ -144,7 +157,9 @@ function View:pushLoginPage()
 		onClick = function()
 			self:transitOutPages()
 			self:pushLoadingPage("Please wait...")
-			self.svn_online_model:login(email_textbox.input, password_textbox.input)
+			coroutine.wrap(function ()
+				self.svn_online_model:login(email_textbox.input, password_textbox.input)
+			end)()
 		end
 	}))
 
@@ -285,7 +300,10 @@ function View:pushRegisterPage()
 			end
 
 			self:transitOutPages()
-			self.svn_online_model:register(name_textbox.input, email_textbox.input, password_textbox.input)
+
+			coroutine.wrap(function ()
+				self.svn_online_model:register(name_textbox.input, email_textbox.input, password_textbox.input)
+			end)()
 		end
 	}))
 
@@ -358,27 +376,6 @@ function View:pushLoadoutPage()
 		alignY = "center",
 		font = self.fonts:loadFont("Regular", 34),
 		text = require("inspect")(self.svn_online_model.session_user)
-	}))
-
-	local Score = require("svn.scores.Score")
-
-	page:addChild("moneyPrinter", Button({
-		label = "Get more money",
-		font = self.fonts:loadFont("Regular", 20),
-		width = 100,
-		height = 30,
-		color = { 0.05, 0.52, 0.65, 1 },
-		onClick = function()
-			local score = Score()
-			score.score = 5000000
-			score.chart_duration = 120
-			score.ln_percent = 0.01
-			score.enps_diff = 20.00
-			score.msd_diff = 26.00
-			score.note_count = 2000
-			score.input_mode = "4key"
-			self.svn_online_model:submitScore(score)
-		end
 	}))
 end
 

@@ -1,25 +1,25 @@
 local Scene = require("osu_ui.Scene")
 local SavolinaLoadout = require("svnplug.views.osu.SavolinaLoadout")
 
+local MessageEvent = require("svnplug.online.Event.Message")
+
 local base_load = Scene.load
 function Scene:load()
 	base_load(self)
 	self.screens.savolinaLoadout = SavolinaLoadout({ z = 0.05 })
-	self.game.svn_online_model:listenForMessages(self, self.svnMessage)
+	self.game.svn_online_model:listenForEvents(self, self.handleSvnEvent)
 end
 
----@param text string
----@param message_type svnplug.OnlineMessageType
-function Scene:svnMessage(text, message_type) ---@diagnostic disable-line
-	local color = "error"
+---@param event svnplug.online.Event
+function Scene:handleSvnEvent(event) ---@diagnostic disable-line
+	if MessageEvent * event then
+		---@cast event svnplug.online.MessageEvent
+		local color = "error"
 
-	if message_type == "server_info" then
-		color = "orange"
-	elseif message_type == "info" then
-		color = "purple"
-	elseif message_type == "good_news" then
-		color = "green"
+		if event.type == "info" then
+			color = "orange"
+		end
+
+		self.popupContainer:add(event.message, color)
 	end
-
-	self.popupContainer:add(text, color)
 end
