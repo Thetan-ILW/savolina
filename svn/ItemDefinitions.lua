@@ -17,5 +17,6 @@ return function (tr)
 	tr:add("red_gem", Resource()) -- ID 1
 	tr:add("blue_gem", Resource()) -- ID 2
 	tr:add("white_gem", Resource()) -- ID 3
-	tr:add("shit_item_gacha", Consumable()) -- ID 4
+	tr:add("poor_lootbox", Consumable()) -- ID 4
+	tr:add("coins", Resource()) -- ID 5
 end

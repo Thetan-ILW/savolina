@@ -7,11 +7,11 @@ local ScoreReward = require("svn.scores.ScoreReward")
 local Scores = class()
 
 ---@param users_repo svn.UsersRepo
----@param items_repo svn.ItemsRepo
+---@param items svn.Items
 ---@param template_registry svn.TemplateRegistry
-function Scores:new(users_repo, items_repo, template_registry)
+function Scores:new(users_repo, items, template_registry)
 	self.users_repo = users_repo
-	self.items_repo = items_repo
+	self.items = items
 	self.template_registry = template_registry
 end
 
@@ -20,8 +20,7 @@ end
 ---@return svn.ScoreReward
 function Scores:rewardUser(user, score)
 	local reward = ScoreReward()
-	reward.coins = 0
-	reward.items = {}
+	reward.changed_items = {}
 
 	local coins_multiplier = 1
 
@@ -34,26 +33,17 @@ function Scores:rewardUser(user, score)
 	coins_multiplier = coins_multiplier + score.ln_percent
 	coins_multiplier = coins_multiplier + score.chart_duration / 480
 
-	reward.coins = (score.score / 1000000) * coins_multiplier
+	local coins_item = self.template_registry:createByName("coins")
+	assert(coins_item)
+	coins_item.owner_id = user.id
+	coins_item.amount = math.ceil((score.score / 1000000) * coins_multiplier)
+	table.insert(reward.changed_items, self.items:addItem(coins_item))
 
-	user.coins = user.coins + reward.coins
-	self.users_repo:updateUser(user)
+	local lootbox = self.template_registry:createByName("poor_lootbox")
+	assert(lootbox)
+	lootbox.owner_id = user.id
+	table.insert(reward.changed_items, self.items:addItem(lootbox))
 
-	local template = self.template_registry:createByName("shit_item_gacha")
-	template.owner_id = user.id
-
-	if template then
-		local item = self.items_repo:getOwnerItemByTemplateId(user.id, template.template_id)
-
-		if item then
-			item.amount = item.amount + 1
-			self.items_repo:updateItem(item)
-		else
-			self.items_repo:createItem(template)
-		end
-	end
-
-	table.insert(reward.items, template)
 	return reward
 end
 

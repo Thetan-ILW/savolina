@@ -35,4 +35,9 @@ function Item:copy()
 	return t
 end
 
+---@return boolean
+function Item:canStack()
+	return self.type ~= Item.Type.Wearable
+end
+
 return Item

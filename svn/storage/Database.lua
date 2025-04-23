@@ -11,10 +11,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 	`name` TEXT UNIQUE,
 	`email` TEXT UNIQUE,
 	`password` TEXT,
-	`creation_date` INTEGER,
-	`level` INTEGER,
-	`experience` INTEGER,
-	`coins` REAL
+	`creation_date` INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS `sessions` (

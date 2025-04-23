@@ -12,20 +12,20 @@ function ItemsRepo:new(models, template_registry)
 end
 
 ---@param id integer
----@return svn.Item?
+---@return svn.InventoryEntry?
 function ItemsRepo:getItem(id)
 	return self.models.inventory_entries:find({ id = assert(id) })
 end
 
 ---@param owner_id integer
 ---@param template_id integer
----@return svn.Item?
+---@return svn.InventoryEntry?
 function ItemsRepo:getOwnerItemByTemplateId(owner_id, template_id)
 	return self.models.inventory_entries:find({ template_id = assert(template_id), owner_id = assert(owner_id) })
 end
 
 ---@param owner_id integer
----@return svn.Item[]
+---@return svn.InventoryEntry[]
 function ItemsRepo:getOwnerItems(owner_id)
 	return self.models.inventory_entries:select({ owner_id = assert(owner_id) })
 end
@@ -33,23 +33,27 @@ end
 ---@param item svn.Item
 ---@return svn.Item
 function ItemsRepo:createItem(item)
-	local entry = self.models.items:create(item)
-	item.id = entry.id
+	assert(item.owner_id)
+	local inserted_item = self.models.items:create(item)
 
 	if item.type == item.Type.Wearable then
 		self.models.wearable_params:create(item)
 	end
 
+	item.id = inserted_item.id
 	return item
 end
 
 ---@param item svn.Item
+---@return svn.Item
 function ItemsRepo:updateItem(item)
 	self.models.items:update(item, { id = item.id })
 
 	if item.type == item.Type.Wearable then
 		self.models.wearable_params:update(item, { id = item.id })
 	end
+
+	return item
 end
 
 return ItemsRepo

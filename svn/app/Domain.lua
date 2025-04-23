@@ -13,7 +13,7 @@ local Domain = class()
 function Domain:new(repos, template_registry)
 	self.users = Users(repos.users_repo)
 	self.items = Items(repos.items_repo)
-	self.scores = Scores(repos.users_repo, repos.items_repo, template_registry)
+	self.scores = Scores(repos.users_repo, self.items, template_registry)
 end
 
 return Domain

@@ -2,8 +2,7 @@ local class = require("class")
 
 ---@class svn.ScoreReward
 ---@operator call: svn.ScoreReward
----@field coins number
----@field items svn.InventoryEntry[] New items
+---@field changed_items svn.InventoryEntry[]
 local ScoreReward = class()
 
 return ScoreReward
