@@ -8,6 +8,27 @@ local class = require("class")
 ---@field session_user svn.User?
 local OnlineModel = class()
 
+---@enum svnplug.online.EventType
+OnlineModel.EventTypes = {
+	StateUpdated = 1,
+	Message = 2,
+	InventoryUpdate = 3,
+	Gift = 4,
+}
+
+---@class svnplug.online.Event
+---@field type svnplug.online.EventType
+
+---@class svnplug.online.MessageEvent : svnplug.online.Event
+---@field message string
+---@field type "error" | "info"
+
+---@class svnplug.online.InventoryUpdateEvent : svnplug.online.Event
+---@field changed_items svn.Item[]
+
+---@class svnplug.online.GiftEvent : svnplug.online.Event
+---@field items svn.Item[]
+
 ---@param svn_client svnplug.SvnClient
 function OnlineModel:new(svn_client)
 	self.svn_client = svn_client
@@ -15,7 +36,7 @@ function OnlineModel:new(svn_client)
 	self.session_cookie = ""
 	self.state = "connecting"
 	self.stateListeners = {} ---@type {[table]: fun(self: table, state: svnplug.OnlineState)}
-	self.messageListeners = {} ---@type {[table]: fun(self: table, text: string)}
+	self.messageListeners = {} ---@type {[table]: fun(self: table, text: string, type: svnplug.OnlineMessageType)}
 end
 
 function OnlineModel:listenForStateChanges(instance, f)
@@ -68,9 +89,13 @@ function OnlineModel:update()
 	end
 end
 
-function OnlineModel:message(text)
+---@alias svnplug.OnlineMessageType "error" | "server_info" | "info" | "good_news"
+
+---@param text string
+---@param type svnplug.OnlineMessageType
+function OnlineModel:message(text, type)
 	for instance, f in pairs(self.messageListeners) do
-		f(instance, text)
+		f(instance, text, type)
 	end
 end
 
@@ -92,7 +117,7 @@ function OnlineModel:login(email, password)
 		if user then
 			self.session_user = user
 		else
-			self:message("Could not log in. Make sure you entered the correct email/password")
+			self:message("Could not log in. Make sure you entered the correct email/password", "error")
 		end
 		self:onlineStateUpdated()
 	end)()
@@ -108,7 +133,8 @@ function OnlineModel:register(name, email, password)
 		if user then
 			self.session_user = user
 		else
-			self:message(err)
+			---@cast err string
+			self:message(err, "error")
 		end
 		self:onlineStateUpdated()
 	end)()
@@ -120,9 +146,11 @@ function OnlineModel:submitScore(score)
 		local reward = self.svn_client.remote.submission:submitScore(score)
 
 		if reward then
-			print(require("inspect")(reward))
-		else
-			print("noob")
+			for _, item in ipairs(reward.changed_items) do
+				if item.template_id == 5 then
+					self:message(("Total coins: %i"):format(item.amount), "good_news")
+				end
+			end
 		end
 	end)()
 end

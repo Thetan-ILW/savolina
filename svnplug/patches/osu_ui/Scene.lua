@@ -9,6 +9,17 @@ function Scene:load()
 end
 
 ---@param text string
-function Scene:svnMessage(text) ---@diagnostic disable-line
-	self.popupContainer:add(text, "error")
+---@param message_type svnplug.OnlineMessageType
+function Scene:svnMessage(text, message_type) ---@diagnostic disable-line
+	local color = "error"
+
+	if message_type == "server_info" then
+		color = "orange"
+	elseif message_type == "info" then
+		color = "purple"
+	elseif message_type == "good_news" then
+		color = "green"
+	end
+
+	self.popupContainer:add(text, color)
 end
