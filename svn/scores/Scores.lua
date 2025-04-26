@@ -1,7 +1,5 @@
 local class = require("class")
 
-local ScoreReward = require("svn.scores.ScoreReward")
-
 ---@class svn.Scores 
 ---@operator call: svn.Scores
 local Scores = class()
@@ -17,10 +15,9 @@ end
 
 ---@param user svn.User
 ---@param score svn.Score
----@return svn.ScoreReward
+---@return svn.InventoryEntry[] changed_items
 function Scores:rewardUser(user, score)
-	local reward = ScoreReward()
-	reward.changed_items = {}
+	local changed_items = {}
 
 	local coins_multiplier = 1
 
@@ -37,14 +34,14 @@ function Scores:rewardUser(user, score)
 	assert(coins_item)
 	coins_item.owner_id = user.id
 	coins_item.amount = math.ceil((score.score / 1000000) * coins_multiplier)
-	table.insert(reward.changed_items, self.items:addItem(coins_item))
+	table.insert(changed_items, self.items:addItem(coins_item))
 
 	local lootbox = self.template_registry:createByName("poor_lootbox")
 	assert(lootbox)
 	lootbox.owner_id = user.id
-	table.insert(reward.changed_items, self.items:addItem(lootbox))
+	table.insert(changed_items, self.items:addItem(lootbox))
 
-	return reward
+	return changed_items
 end
 
 return Scores

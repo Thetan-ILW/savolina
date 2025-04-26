@@ -8,10 +8,10 @@ local Component = require("ui.Component")
 local BackButton = require("osu_ui.ui.BackButton")
 local Image = require("ui.Image")
 
-local StateChangedEvent = require("svnplug.online.Event.StateChangedEvent")
+local MainPage = require("svnplug.views.osu.MainPage")
 
----@class svnplug.osu.SavolinaLoadout : osu.ui.Screen
----@operator call: svnplug.osu.SavolinaLoadout
+---@class svnplug.osu.Savolina: osu.ui.Screen
+---@operator call: svnplug.osu.Savolina
 local View = Screen + {}
 
 function View:keyPressed(event)
@@ -45,7 +45,10 @@ function View:load()
 	self.page_count = 0
 
 	self.svn_online_model = self.scene.game.svn_online_model ---@type svnplug.OnlineModel
-	self.svn_online_model:listenForEvents(self, self.handleSvnEvent)
+	self.svn_online_model.events:listen(self, function(event)
+		---@cast event svnplug.StateChangeEvent
+		self:handleOnlineState(event.state)
+	end)
 
 	self:addChild("backButton", BackButton({
 		y = self.height - 58,
@@ -59,7 +62,7 @@ function View:load()
 		end,
 	}))
 
-	self:handleState(self.svn_online_model.state)
+	self:handleOnlineState(self.svn_online_model.state)
 end
 
 function View:getPageName()
@@ -68,20 +71,11 @@ function View:getPageName()
 end
 
 function View:kill()
-	self.svn_online_model:stopListeningForEvents(self)
+	self.svn_online_model.events:stop(self)
 end
 
----@param event svnplug.online.Event
-function View:handleSvnEvent(event)
-	if not (StateChangedEvent * event) then
-		return
-	end
-
-	self:handleState(event.state)
-end
-
----@param state svnplug.online.State
-function View:handleState(state)
+---@param state svnplug.OnlineState
+function View:handleOnlineState(state)
 	self:transitOutPages()
 
 	if state == "connecting" then
@@ -93,7 +87,7 @@ function View:handleState(state)
 	elseif state == "auth_required" then
 		self:pushLoginPage()
 	elseif state == "ready" then
-		self:pushLoadoutPage()
+		self.pages:addChild(self:getPageName(), MainPage())
 	end
 end
 
@@ -160,7 +154,7 @@ function View:pushLoginPage()
 			self:transitOutPages()
 			self:pushLoadingPage("Authentication")
 			coroutine.wrap(function ()
-				self.svn_online_model:login(email_textbox.input, password_textbox.input)
+				self.svn_online_controller:login(email_textbox.input, password_textbox.input)
 			end)()
 		end
 	}))
@@ -188,7 +182,7 @@ function View:pushLoginPage()
 		origin = { x = 0.5, y = 0.5 },
 		width = 450,
 		height = c.height + 50,
-		color = { 0.02, 0.02, 0.1, 1 },
+		color = { 0.09, 0.09, 0.09, 1 },
 		rounding = 14
 	}))
 end
@@ -305,7 +299,7 @@ function View:pushRegisterPage()
 			self:pushLoadingPage("Authentication")
 
 			coroutine.wrap(function ()
-				self.svn_online_model:register(name_textbox.input, email_textbox.input, password_textbox.input)
+				self.svn_online_controller:register(name_textbox.input, email_textbox.input, password_textbox.input)
 			end)()
 		end
 	}))
@@ -333,7 +327,7 @@ function View:pushRegisterPage()
 		origin = { x = 0.5, y = 0.5 },
 		width = 450,
 		height = c.height + 50,
-		color = { 0.02, 0.02, 0.1, 1 },
+		color = { 0.09, 0.09, 0.09, 1 },
 		rounding = 14
 	}))
 end
@@ -367,19 +361,6 @@ function View:pushLoadingPage(text)
 	}))
 
 	c:autoSize()
-end
-
-function View:pushLoadoutPage()
-	local page = self.pages:addChild(self:getPageName(), Page())
-
-	page:addChild("text", Label({
-		boxWidth = self.width,
-		boxHeight = self.height,
-		alignX = "center",
-		alignY = "center",
-		font = self.fonts:loadFont("Regular", 34),
-		text = require("inspect")(self.svn_online_model.session_user)
-	}))
 end
 
 function View:transitOutPages()

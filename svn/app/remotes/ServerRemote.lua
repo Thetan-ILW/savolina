@@ -2,6 +2,7 @@ local class = require("class")
 
 local AuthServerRemote = require("svn.access.remotes.AuthServerRemote")
 local SubmissionServerRemote = require("svn.scores.remotes.SubmissionServerRemote")
+local ItemsServerRemote = require("svn.items.remotes.ItemsServerRemote")
 
 ---@class svn.WebsocketContext
 ---@field user svn.User
@@ -20,6 +21,7 @@ local ServerRemote = class()
 function ServerRemote:new(domain, sessions)
 	self.auth = AuthServerRemote(domain.users, sessions)
 	self.submission = SubmissionServerRemote(domain.scores)
+	self.items = ItemsServerRemote(domain.items)
 end
 
 ---@param msg string

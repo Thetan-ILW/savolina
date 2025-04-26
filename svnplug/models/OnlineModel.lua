@@ -1,41 +1,24 @@
 local class = require("class")
 
-local StateChangedEvent = require("svnplug.online.Event.StateChangedEvent")
-local MessageEvent = require("svnplug.online.Event.Message")
-local InventoryUpdateEvent = require("svnplug.online.Event.InventoryUpdateEvent")
+local EventDispatcher = require("svnplug.events.EventDispatcher")
+local StateChangeEvent = require("svnplug.events.StateChangeEvent")
+local MessageEvent = require("svnplug.events.MessageEvent")
 
----@alias svnplug.online.State "connecting" | "reconnecting" | "auth_required" | "authentication" | "ready"
+---@alias svnplug.OnlineState "connecting" | "reconnecting" | "auth_required" | "authentication" | "ready"
 
 ---@class svnplug.OnlineModel
 ---@operator call: svnplug.OnlineModel
----@field state svnplug.online.State
+---@field state svnplug.OnlineState
 local OnlineModel = class()
 
 ---@param svn_client svnplug.SvnClient
 function OnlineModel:new(svn_client)
 	self.svn_client = svn_client
+	self.events = EventDispatcher()
+
 	self.connected = false
 	self.session_active = false
 	self.state = "connecting"
-	self.event_listeners = {} ---@type {[table]: fun(self: table, event: svnplug.online.Event)}
-end
-
----@param instance table
----@param f fun(self: table, event: svnplug.online.Event)
-function OnlineModel:listenForEvents(instance, f)
-	self.event_listeners[instance] = f
-end
-
----@param instance table
-function OnlineModel:stopListeningForEvents(instance)
-	self.event_listeners[instance] = nil
-end
-
----@param event svnplug.online.Event
-function OnlineModel:sendEvent(event)
-	for instance, f in pairs(self.event_listeners) do
-		f(instance, event)
-	end
 end
 
 function OnlineModel:onlineStateUpdated()
@@ -61,9 +44,9 @@ function OnlineModel:onlineStateUpdated()
 		self.state = "ready"
 	end
 
-	local event = StateChangedEvent()
+	local event = StateChangeEvent()
 	event.state = self.state
-	self:sendEvent(event)
+	self.events:dispatch(event)
 end
 
 function OnlineModel:update()
@@ -85,51 +68,47 @@ end
 ---@param email string
 ---@param password string
 function OnlineModel:login(email, password)
+	if not self.connected then
+		return
+	end
+
 	local cookie, err = self.svn_client.remote.auth:login(email, password)
 
 	if cookie then
 		self:saveCookie(cookie)
 		self.session_active = true
+		self:onlineStateUpdated()
 	else
 		---@cast err string
 		local msg = MessageEvent()
 		msg.message = err
 		msg.type = "error"
-		self:sendEvent(msg)
+		self.events:dispatch(msg)
 	end
-	self:onlineStateUpdated()
+
 end
 
 ---@param name string
 ---@param email string
 ---@param password string
 function OnlineModel:register(name, email, password)
+	if not self.connected then
+		return
+	end
+
 	local cookie, err = self.svn_client.remote.auth:register(name, email, password)
 
 	if cookie then
 		self:saveCookie(cookie)
 		self.session_active = true
+		self:onlineStateUpdated()
 	else
 		---@cast err string
 		local msg = MessageEvent()
 		msg.message = err
 		msg.type = "error"
-		self:sendEvent(msg)
+		self.events:dispatch(msg)
 	end
-	self:onlineStateUpdated()
-end
-
----@param score svn.Score
-function OnlineModel:submitScore(score)
-	local reward = self.svn_client.remote.submission:submitScore(score)
-
-	if not reward then
-		return
-	end
-
-	local e = InventoryUpdateEvent()
-	e.changed_items = reward.changed_items
-	self:sendEvent(e)
 end
 
 return OnlineModel

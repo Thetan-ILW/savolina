@@ -10,7 +10,7 @@ function SubmissionServerRemote:new(scores)
 end
 
 ---@param score svn.Score
----@return svn.ScoreReward?
+---@return svn.InventoryEntry[]?
 function SubmissionServerRemote:submitScore(score)
 	if not self.ctx.user then
 		return
@@ -20,8 +20,7 @@ function SubmissionServerRemote:submitScore(score)
 		return
 	end
 
-	local reward = self.scores:rewardUser(self.ctx.user, score)
-	return reward
+	return self.scores:rewardUser(self.ctx.user, score)
 end
 
 return SubmissionServerRemote

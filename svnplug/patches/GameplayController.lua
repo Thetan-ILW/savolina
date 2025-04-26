@@ -19,9 +19,14 @@ function GameplayController:saveScore()
 	score.note_count = chartdiff.notes_count
 	score.input_mode = chartdiff.inputmode
 
-	local svn_online_model = self.svn_online_model ---@type svnplug.OnlineModel
+	local svn_client = self.svn_client ---@type svnplug.SvnClient
+	local inventory_model = self.svn_inventory_model ---@type svnplug.InventoryModel
 
 	coroutine.wrap(function ()
-		svn_online_model:submitScore(score)
+		local changed_items = svn_client.remote.submission:submitScore(score)
+
+		if changed_items then
+			inventory_model:updateInventory(changed_items, false)
+		end
 	end)()
 end

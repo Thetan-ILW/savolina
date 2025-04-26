@@ -16,7 +16,7 @@ function MainMenu:load(...)
 			if not this.mouseOver then
 				return
 			end
-			self:toNextView("savolinaLoadout")
+			self:toNextView("savolina")
 		end
 	}))
 end
